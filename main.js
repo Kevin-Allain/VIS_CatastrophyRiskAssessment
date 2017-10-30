@@ -10,6 +10,8 @@ var raycaster = new THREE.Raycaster();
 var mouse = new THREE.Vector2();
 
 var cylinderGeometry;
+var cylinderArray;
+var wireframe;
 var projector,  INTERSECTED; // mouse = { x: 0, y: 0 },
 
 var windowHalfX = window.innerWidth / 2;
@@ -47,13 +49,10 @@ function init(dataLand) {
 	var gui = new dat.GUI();
 	gui.add( params, 'uniform' );
 	gui.add( params, 'tension', 0, 1 ).step( 0.01 ).onChange( function( value ) {
-		splines.uniform.tension = value;
-		updateSplineOutline();
+		splines.uniform.tension = value; updateSplineOutline();
 	});
-	gui.add( params, 'centripetal' );
-	gui.add( params, 'chordal' );
-	gui.add( params, 'addPoint' );
-	gui.add( params, 'removePoint' );
+	gui.add( params, 'centripetal' ); gui.add( params, 'chordal' );
+	gui.add( params, 'addPoint' ); gui.add( params, 'removePoint' );
 	gui.add( params, 'exportSpline' );
 	gui.open();
 
@@ -112,8 +111,6 @@ function init(dataLand) {
 	calculatePosColor(dataLand);
 	console.log("Post calculatePosColor: "); console.log(dataLand);		
 	drawGroundThree(scene, dataLand);
-	drawTestLinesThree(scene);
-	// drawGrid(scene);
 	drawPlane(scene);
 	var paramsCatastrophy = { "catastrophyParamA":40, "catastrophyParamB":21, "catastrophyParamC": 11 }
 	drawCylinder(scene);
@@ -124,8 +121,18 @@ function init(dataLand) {
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 
-	// controls
+	// Controls - boxes
 	controls = new THREE.OrbitControls( camera, renderer.domElement );
+	// Controls - cylinder
+	controlsCylinder = new THREE.TrackballControls( camera );
+	controlsCylinder.rotateSpeed = 1.0;
+	controlsCylinder.zoomSpeed = 1.2;
+	controlsCylinder.panSpeed = 0.8;
+	controlsCylinder.noZoom = false;
+	controlsCylinder.noPan = false;
+	controlsCylinder.staticMoving = true;
+	controlsCylinder.dynamicDampingFactor = 0.3;
+
 
 	// transformControl
 	transformControl = new THREE.TransformControls( camera, renderer.domElement );
@@ -172,6 +179,23 @@ function init(dataLand) {
 	dragcontrols.addEventListener( 'hoveroff', function ( event ) {
 		delayHideTransform();
 	} );
+
+	cylinderArray = [cylinder];
+	console.log("cylinderArray: "); console.log(cylinderArray);
+	var dragControlsCylinder = new THREE.DragControls( cylinderArray, camera, renderer.domElement );
+	dragControlsCylinder.addEventListener( 'dragstart', function ( event ) { 
+		controlsCylinder.enabled = false;
+		controls.enabled = false; 
+	} );
+	dragControlsCylinder.addEventListener( 'dragend', function ( event ) { 
+		controlsCylinder.enabled = true; 
+		controls.enabled=true;
+	} );
+
+
+	console.log("wireframe");console.log(wireframe);
+	console.log("cylinder");console.log(cylinder);
+
 }
 
 function onWindowResize() {
@@ -195,22 +219,7 @@ function animate() {
 	transformControl.update();
 }
 
-function drawGrid(scene){
-	// Grid -- Calculation is wrong
-	var size = 500, step = 10;
-	//var size = data.stations.station.length, step = 50;
-	var geometryBox = new THREE.Geometry();
-	for ( var i = - size ; i <= size; i += step ) {
-	    geometryBox.vertices.push( new THREE.Vector3( - size, 0, i ) );
-	    geometryBox.vertices.push( new THREE.Vector3(  size, 0, i ) );
-	    geometryBox.vertices.push( new THREE.Vector3( i, 0, - size ) );
-	    geometryBox.vertices.push( new THREE.Vector3( i, 0,   size ) );
-	}
-	var material = new THREE.LineBasicMaterial( { color: 0x000000, opacity: .7 } );
-	var line = new THREE.Line( geometryBox, material );
-	line.type = THREE.LinePieces;
-	scene.add( line );	
-}
+
 
 function drawPlane(scene){
 	var planeGeometry = new THREE.PlaneGeometry( 2000, 2000 );
@@ -222,9 +231,9 @@ function drawPlane(scene){
 	plane.name="plane";
 	scene.add( plane );
 
-	var helper = new THREE.GridHelper( 2000, 100 );
+	var helper = new THREE.GridHelper( 2000, 500 );
 	helper.position.y = - 1;
-	helper.material.opacity = 0.25;
+	helper.material.opacity = 0.5;
 	helper.material.transparent = true;
 	scene.add( helper );
 	var axis = new THREE.AxisHelper();
@@ -234,7 +243,7 @@ function drawPlane(scene){
 
 
 function drawGroundThree(scene, dataLand, dataCatastrophy){
-	// Create a plane for each land
+	// Create a ground for each land
 	for (var i =0; i < dataLand.states.length; i++) {
 		var curState = dataLand.states[i];
 	    // create the ground plane
@@ -291,7 +300,7 @@ function drawCylinder(scene, catastrophyType, paramsCatastrophy){
 
 	var geo = new THREE.EdgesGeometry( cylinderGeometry ); // or WireframeGeometry( geometry )
 	var mat = new THREE.LineBasicMaterial( { color: 0x0000ff, linewidth: 2 } );
-	var wireframe = new THREE.LineSegments( geo, mat );
+	wireframe = new THREE.LineSegments( geo, mat );
     wireframe.position.x = 40;
     wireframe.position.z = 60;
     wireframe.position.y = 20;	
@@ -303,25 +312,6 @@ function drawCylinder(scene, catastrophyType, paramsCatastrophy){
     scene.add(cylinder);
 }
 
-function drawTestLinesThree(scene){
-	// Polygon
-	// geometryBox
-	var geometryBoxPolygon = new THREE.Geometry();
-	geometryBoxPolygon.vertices.push( new THREE.Vector3( 5, 0, 5 ) );
-	geometryBoxPolygon.vertices.push( new THREE.Vector3( -5, 0, 5 ) );
-	geometryBoxPolygon.vertices.push( new THREE.Vector3( 5, 0, -5 ) );
-	geometryBoxPolygon.vertices.push( new THREE.Vector3( -5, 0, -5 ) );
-	geometryBoxPolygon.vertices.push( new THREE.Vector3( -5, 0, -15 ) );
-	geometryBoxPolygon.faces.push(new THREE.Face3(1,2,3));
-	// material
-	var material = new THREE.LineBasicMaterial( { color: 0xff0000, linewidth: 400 } );
-	// line
-	var line = new THREE.Line( geometryBoxPolygon, material );
-	scene.add( line );
-	console.log("line: "); console.log(line);
-}
-
-
 function calculatePosColor(dataLand){
 	// This is made up, but probably the part that has crazy potential (potential use for machine learning and interaction here !)
 	for(var i =0; i < dataLand.states.length;i++){		
@@ -329,13 +319,11 @@ function calculatePosColor(dataLand){
 
 		// Added for results to be usable
 		var randomVarA = Math.random(); var randomVarB = Math.random(); var randomVarC = Math.random();
-
 		var localCalculRiskAlpha = dataLand.states[i].paramA * randomVarA - dataLand.states[i].paramB * randomVarB + dataLand.states[i].paramC * randomVarC;
 		randomVarA = Math.random();	randomVarB = Math.random(); randomVarC = Math.random();
 		var localCalculRiskBeta = dataLand.states[i].paramA * randomVarA - dataLand.states[i].paramB * randomVarB + dataLand.states[i].paramC * randomVarC;
 		randomVarA = Math.random();	randomVarB = Math.random(); randomVarC = Math.random();
 		var localCalculRiskGamma = dataLand.states[i].paramA * randomVarA - dataLand.states[i].paramB * randomVarB+ dataLand.states[i].paramC * randomVarC;
-
 		// What are the cases based on the calculus?
 		if (typeof dataLand.states[i].riskAlpha == "undefined"){ dataLand.states[i].riskAlpha = 0; } 
 		if (typeof dataLand.states[i].riskBeta == "undefined"){ dataLand.states[i].riskBeta = 0; }
@@ -343,7 +331,6 @@ function calculatePosColor(dataLand){
 		dataLand.states[i].riskAlpha = localCalculRiskAlpha;
 		dataLand.states[i].riskBeta = localCalculRiskBeta; 
 		dataLand.states[i].riskGamma = localCalculRiskGamma; 
-
 	}
 }
 
@@ -352,15 +339,11 @@ function render() {
 	var rx = Math.sin( time * 0.7 ) * 0.5,
 		ry = Math.sin( time * 0.3 ) * 0.5,
 		rz = Math.sin( time * 0.2 ) * 0.5;
-	// camera.position.x += ( mouseX - camera.position.x ) * .05;
-	// camera.position.y += ( - mouseY - camera.position.y ) * .05;
-	// camera.lookAt( scene.position );
 
 	// Render code from the webgl_geometry_splines
 	splines.uniform.mesh.visible = params.uniform;
 	splines.centripetal.mesh.visible = params.centripetal;
 	splines.chordal.mesh.visible = params.chordal;
-	renderer.render( scene, camera );
 
 	// RAY CASTER
 	// update the picking ray with the camera and mouse position
@@ -369,29 +352,30 @@ function render() {
 	var intersects = raycaster.intersectObjects( scene.children );
 
 	if ( intersects.length > 0 ) {
-		// console.log("intersects.length > 0: "); console.log(intersects);  console.log("INTERSECTED: "); console.log(INTERSECTED);
-
 		if ( intersects[0].object.name != "plane" && INTERSECTED != intersects[ 0 ].object ) {
-			console.log("intersects[ intersects.length-1 ]: "); console.log(intersects[ intersects.length-1 ]);
-			console.log("intersects[0]"); console.log(intersects[0]); console.log("INTERSECTED: "); console.log(INTERSECTED);
-
 			if ( INTERSECTED && typeof INTERSECTED.material.emissive!= "undefined" ) 
 				INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
 			INTERSECTED = intersects[ 0 ].object;
 			if (typeof INTERSECTED.material.emissive!= "undefined" ){
 				INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
-				INTERSECTED.material.emissive.setHex( 0xdddddd );
+				INTERSECTED.material.emissive.setHex( 0xcccccc );
 			}
 		}
 	} else {
 		if ( INTERSECTED!=null && typeof INTERSECTED.material.emissive != "undefined"){
-			console.log("intersects.length == 0: "); console.log(intersects);
-			console.log("INTERSECTED: "); console.log(INTERSECTED);
 			if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
 		}
 		INTERSECTED = null;
 	}
 	// --
+
+	// Dirty: TODO assign properly wireframe so that it sticks to the position of the cylinder
+	cylinder.position.y = 20;
+	wireframe.position.x = cylinder.position.x;
+	wireframe.position.y = cylinder.position.y;
+	wireframe.position.z = cylinder.position.z;
+
+
 	renderer.render( scene, camera );
 }
 
@@ -489,7 +473,6 @@ function hideTransform() {
 		transformControl.detach( transformControl.object );
 	}, 2500 )
 }
-
 
 // Ray caster -> The mouse
 window.addEventListener( 'mousemove', onMouseMove, false );

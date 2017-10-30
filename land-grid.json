@@ -18,6 +18,30 @@
 		"widthX":10,"widthY":10,
 		"paramA":32,"paramB":1,"paramC":6
 		},
+		{"state_name":"Hoth",
+		"x" : -25 , "y" : 0, "z" : -25,
+		"widthX":10,"widthY":10,
+		"paramA":99,"paramB":1,"paramC":6
+		},		
+
+		{"state_name":"Endor",
+		"x" : -25 , "y" : 0, "z" : 15,
+		"widthX":10,"widthY":10,
+		"paramA":66,"paramB":1,"paramC":66
+		},
+
+		{"state_name":"Geonogis",
+		"x" : -5 , "y" : 0, "z" : 15,
+		"widthX":10,"widthY":10,
+		"paramA":66,"paramB":1,"paramC":66
+		},
+
+
+		{"state_name":"Naboo",
+		"x" : -15 , "y" : 0, "z" : 15,
+		"widthX":10,"widthY":10,
+		"paramA":1,"paramB":1,"paramC":66
+		},		
 
 		{"state_name":"Paris",
 		"x" : -25 , "y" : 0, "z" : -5,
