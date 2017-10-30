@@ -5,8 +5,12 @@ var camera, scene, renderer;
 var geometryBox, group;
 var mouseX = 0, mouseY = 0;
 
+
+var raycaster = new THREE.Raycaster();
+var mouse = new THREE.Vector2();
+
 var cylinderGeometry;
-var projector, mouse = { x: 0, y: 0 }, INTERSECTED;
+var projector,  INTERSECTED; // mouse = { x: 0, y: 0 },
 
 var windowHalfX = window.innerWidth / 2;
 var windowHalfY = window.innerHeight / 2;
@@ -215,6 +219,7 @@ function drawPlane(scene){
 	var plane = new THREE.Mesh( planeGeometry, planeMaterial );
 	plane.position.y = -200;
 	plane.receiveShadow = true;
+	plane.name="plane";
 	scene.add( plane );
 
 	var helper = new THREE.GridHelper( 2000, 100 );
@@ -274,7 +279,7 @@ function drawGroundThree(scene, dataLand, dataCatastrophy){
 
 function drawCylinder(scene, catastrophyType, paramsCatastrophy){
     cylinderGeometry	= new THREE.CylinderGeometry(20, 1, 50, 64,1);
-    cylinderMaterial	= new THREE.MeshLambertMaterial({ color: 0xCC0000, opacity: 0.4, transparent: true });
+    cylinderMaterial	= new THREE.MeshLambertMaterial({ color: 0x0000CC, opacity: 0.4, transparent: true});
     cylinder	= new THREE.Mesh( cylinderGeometry, cylinderMaterial );
     cylinder.castShadow = true;
     cylinder.receiveShadow = false;
@@ -284,7 +289,15 @@ function drawCylinder(scene, catastrophyType, paramsCatastrophy){
     cylinder.catastrophyType = catastrophyType;
     cylinder.paramsCatastrophy = paramsCatastrophy;
 
-	
+	var geo = new THREE.EdgesGeometry( cylinderGeometry ); // or WireframeGeometry( geometry )
+	var mat = new THREE.LineBasicMaterial( { color: 0x0000ff, linewidth: 2 } );
+	var wireframe = new THREE.LineSegments( geo, mat );
+    wireframe.position.x = 40;
+    wireframe.position.z = 60;
+    wireframe.position.y = 20;	
+	scene.add( wireframe );	
+
+	cylinder.children = wireframe;
 
     console.log("cylinder: "); console.log(cylinder);
     scene.add(cylinder);
@@ -349,7 +362,36 @@ function render() {
 	splines.chordal.mesh.visible = params.chordal;
 	renderer.render( scene, camera );
 
+	// RAY CASTER
+	// update the picking ray with the camera and mouse position
+	raycaster.setFromCamera( mouse, camera );
+	// calculate objects intersecting the picking ray
+	var intersects = raycaster.intersectObjects( scene.children );
 
+	if ( intersects.length > 0 ) {
+		// console.log("intersects.length > 0: "); console.log(intersects);  console.log("INTERSECTED: "); console.log(INTERSECTED);
+
+		if ( intersects[0].object.name != "plane" && INTERSECTED != intersects[ 0 ].object ) {
+			console.log("intersects[ intersects.length-1 ]: "); console.log(intersects[ intersects.length-1 ]);
+			console.log("intersects[0]"); console.log(intersects[0]); console.log("INTERSECTED: "); console.log(INTERSECTED);
+
+			if ( INTERSECTED && typeof INTERSECTED.material.emissive!= "undefined" ) 
+				INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
+			INTERSECTED = intersects[ 0 ].object;
+			if (typeof INTERSECTED.material.emissive!= "undefined" ){
+				INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
+				INTERSECTED.material.emissive.setHex( 0xdddddd );
+			}
+		}
+	} else {
+		if ( INTERSECTED!=null && typeof INTERSECTED.material.emissive != "undefined"){
+			console.log("intersects.length == 0: "); console.log(intersects);
+			console.log("INTERSECTED: "); console.log(INTERSECTED);
+			if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
+		}
+		INTERSECTED = null;
+	}
+	// --
 	renderer.render( scene, camera );
 }
 
@@ -446,4 +488,15 @@ function hideTransform() {
 	hiding = setTimeout( function() {
 		transformControl.detach( transformControl.object );
 	}, 2500 )
+}
+
+
+// Ray caster -> The mouse
+window.addEventListener( 'mousemove', onMouseMove, false );
+window.requestAnimationFrame(render);
+function onMouseMove( event ) {
+	// calculate mouse position in normalized device coordinates
+	// (-1 to +1) for both components
+	mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 }
