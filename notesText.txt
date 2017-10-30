@@ -1,0 +1,21 @@
+	// Polygon
+	// geometry
+	var geometryPolygon = new THREE.Geometry();
+	geometryPolygon.vertices.push( new THREE.Vector3( 0, 0, 0 ) );
+	geometryPolygon.vertices.push( new THREE.Vector3( 5, 0, -2 ) );
+	geometryPolygon.vertices.push( new THREE.Vector3( -5, 0, 2 ) );
+	geometryPolygon.vertices.push( new THREE.Vector3( 0, 0, 0 ) ); // close the loop
+	geometryPolygon.faces.push(new THREE.Face3(1,2,3));
+
+	// material
+	var material = new THREE.LineBasicMaterial( { color: 0xff0000, linewidth: 400 } );
+
+	// line
+	var line = new THREE.Line( geometryPolygon, material );
+	scene.add( line );
+	console.log("line: "); console.log(line);
+
+
+
+	// CRITICAL 
+	http://stemkoski.github.io/Three.js/Mouse-Over.html

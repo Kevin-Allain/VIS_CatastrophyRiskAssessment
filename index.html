@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - geometry hierarchy</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+            color: #000;
+            font-family:Monospace;
+            font-size:13px;
+            text-align:center;
+            font-weight: bold;
+
+            background-color: #fff;
+            margin: 0px;
+            overflow: visible;
+        }
+        #info {
+            color:#000;
+            position: absolute;
+            top: 15px; width: 100%;
+            padding: 5px;
+
+        }        
+        #InfoInteractions{
+            color:#000;
+            position: absolute;
+            top: 10px; 
+            left: 100px;
+            font-family: Roboto,Arial,sans-serif;
+            background-color: #ffffff;
+            box-shadow: 0px 1px 4px rgba(0,0,0,0.3);
+            padding:left;
+            border-radius: 10px;
+            border:solid;
+            padding: 5px;  
+        }
+		</style>
+	</head>
+	<body>
+        <div id="InfoInteractions"> Each colored square represents a region. The more satured, the higher the risk. Color indicates what kind of risk. <br/>
+
+        <input type="range" min="0" max="2000" value="0" onchange="globalIndexValue = this.value;console.log(globalIndexValue);"/> <br/>
+        This is the time <div id="timeSeen"> </div>
+		<!--         <hr/>
+        <div id="InfoHovering"> Hover over stations to get more information </div> -->
+        <br/>
+        <div id="LastHoveredStationInfo">  </div><hr/>
+        <button onclick="myFunction1()">Action 1</button>
+        <button onclick="myFunction2()">Action 2</button>
+        <button onclick="myFunction3()">Action 3</button>
+        <button onclick="myFunction4()">Action 4</button>
+        </div>
+
+		<script src="three.min.js"></script>
+		<script src="d3.min.js"></script>
+		<script src="stats.min.js"></script>
+
+        <script src="js/controls/DragControls.js"></script>
+        <script src="js/controls/OrbitControls.js"></script>
+        <script src="js/controls/TransformControls.js"></script>
+        <script src="js/libs/stats.min.js"></script>
+        <script src="js/libs/dat.gui.min.js"></script>
+
+		<script src="main.js"></script>
+
+	</body>
+</html>

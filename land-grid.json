@@ -1,0 +1,100 @@
+{"states":
+    [
+        {"state_name":"Florida",
+		"x" : 5 , "y" : 0, "z" : 5,
+		"widthX":10,"widthY":10,
+		"paramA":42,"paramB":23,"paramC":69
+		},
+
+
+		{"state_name":"Ishval",
+		"x" : -15 , "y" : 0, "z" : -5,
+		"widthX":10,"widthY":10,
+		"paramA":22,"paramB":23,"paramC":1
+		},
+
+		{"state_name":"Dune",
+		"x" : -15 , "y" : 0, "z" : -15,
+		"widthX":10,"widthY":10,
+		"paramA":32,"paramB":1,"paramC":6
+		},
+
+		{"state_name":"Paris",
+		"x" : -25 , "y" : 0, "z" : -5,
+		"widthX":10,"widthY":10,
+		"paramA":1,"paramB":66,"paramC":1
+		},
+		{"state_name":"London",
+		"x" : -25 , "y" : 0, "z" : 5,
+		"widthX":10,"widthY":10,
+		"paramA":66,"paramB":66,"paramC":1
+		},		
+		{"state_name":"Amsterdam",
+		"x" : -15 , "y" : 0, "z" : 5,
+		"widthX":10,"widthY":10,
+		"paramA":66,"paramB":66,"paramC":1
+		},		
+		{"state_name":"Troy",
+		"x" : -25 , "y" : 0, "z" : -15,
+		"widthX":10,"widthY":10,
+		"paramA":11,"paramB":22,"paramC":33
+		},
+
+
+        {"state_name":"Alabama",
+		"x" : 15 , "y" : 0, "z" : 5,
+		"widthX":10,"widthY":10,
+		"paramA":1,"paramB":73,"paramC":9
+		},
+        {"state_name":"Georgia",
+		"x" : 5 , "y" : 0, "z" : 15,
+		"widthX":10,"widthY":10,
+		"paramA":71,"paramB":0,"paramC":88
+		},
+        {"state_name":"Texas",
+		"x" : 15 , "y" : 0, "z" : 15,
+		"widthX":10,"widthY":10,
+		"paramA":17,"paramB":12,"paramC":44
+		},
+        {"state_name":"South Carolina",
+		"x" : 25 , "y" : 0, "z" : 5,
+		"widthX":10,"widthY":10,
+		"paramA":18,"paramB":23,"paramC":25
+		},
+        {"state_name":"Fallout",
+		"x" : -5 , "y" : 0, "z" : 5,
+		"widthX":10,"widthY":10,
+		"paramA":9,"paramB":2,"paramC":1
+		},
+        {"state_name":"South Park",
+		"x" : 25 , "y" : 0, "z" : 25,
+		"widthX":10,"widthY":10,
+		"paramA":1,"paramB":33,"paramC":48
+		},
+        {"state_name":"Tattoine",
+		"x" : 25 , "y" : 0, "z" : -5,
+		"widthX":10,"widthY":10,
+		"paramA":1,"paramB":1,"paramC":99
+		},
+		{"state_name":"Namek",
+		"x" : 25 , "y" : 0, "z" : 15,
+		"widthX":10,"widthY":10,
+		"paramA":33,"paramB":1,"paramC":22
+		},
+		{"state_name":"Poudlard",
+		"x" : -5 , "y" : 0, "z" : 25,
+		"widthX":10,"widthY":10,
+		"paramA":0,"paramB":1,"paramC":99
+		},
+		{"state_name":"Vegeta",
+		"x" : 25 , "y" : 0, "z" : 35,
+		"widthX":10,"widthY":10,
+		"paramA":99,"paramB":1,"paramC":0
+		},				
+		{"state_name":"Arizona",
+		"x" : 5 , "y" : 0, "z" : 25,
+		"widthX":10,"widthY":10,
+		"paramA":2,"paramB":15,"paramC":102
+		}
+   ]
+}
