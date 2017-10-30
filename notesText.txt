@@ -19,3 +19,26 @@
 
 	// CRITICAL 
 	http://stemkoski.github.io/Three.js/Mouse-Over.html
+
+
+function drawCubesThree(scene){
+	var geometryBox = new THREE.BoxGeometry( 10, 10,10 );
+	var material = new THREE.MeshNormalMaterial();
+	group = new THREE.Group();
+	for ( var i = 0; i < 10; i ++ ) {
+		var mesh = new THREE.Mesh( geometryBox, material );
+		mesh.position.x = Math.random() * 250 - 150;
+		mesh.position.y = Math.random() * 250 - 150;
+		mesh.position.z = Math.random() * 250 - 150;
+		
+		mesh.rotation.x = Math.random() * 2 * Math.PI;
+		mesh.rotation.y = Math.random() * 2 * Math.PI;
+		mesh.matrixAutoUpdate = false;
+		mesh.updateMatrix();
+		group.add( mesh );
+	}
+	scene.add( group );
+}
+
+
+

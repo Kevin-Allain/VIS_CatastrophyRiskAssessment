@@ -54,7 +54,7 @@ function init(dataLand) {
 	gui.open();
 
 	/*******
-	 * Curves
+	 * Curves and boxes
 	 *********/
 	for ( var i = 0; i < splinePointsLength; i ++ ) { addSplineObject( positions[ i ] ); }
 	positions = [];
@@ -90,7 +90,7 @@ function init(dataLand) {
 		var spline = splines[ k ]; scene.add( spline.mesh );
 	}
 
-	load( [ new THREE.Vector3( 289.76843686945404, 452.51481137238443, 56.10018915737797 ),
+	load( [ new THREE.Vector3( 0, 500, 0 ),
 			new THREE.Vector3( -53.56300074753207, 171.49711742836848, -14.495472686253045 ),
 			new THREE.Vector3( -91.40118730204415, 176.4306956436485, -6.958271935582161 ),
 			new THREE.Vector3( -383.785318791128, 491.1365363371675, 47.869296953772746 ) ] );
@@ -111,9 +111,9 @@ function init(dataLand) {
 	drawTestLinesThree(scene);
 	// drawGrid(scene);
 	drawPlane(scene);
-	var paramsCatastrophy = { "catastrophyParamA":40, "catastrophyParamB":21 }
+	var paramsCatastrophy = { "catastrophyParamA":40, "catastrophyParamB":21, "catastrophyParamC": 11 }
 	drawCylinder(scene);
-
+	// --
 
 	// Rendered
 	renderer = new THREE.WebGLRenderer();
@@ -188,87 +188,11 @@ function animate() {
 	requestAnimationFrame( animate );
 	render();
 	stats.update();
+	transformControl.update();
 }
-
-function drawCubesThree(scene){
-	var geometryBox = new THREE.BoxGeometry( 10, 10,10 );
-	var material = new THREE.MeshNormalMaterial();
-	group = new THREE.Group();
-	for ( var i = 0; i < 10; i ++ ) {
-		var mesh = new THREE.Mesh( geometryBox, material );
-		mesh.position.x = Math.random() * 250 - 150;
-		mesh.position.y = Math.random() * 250 - 150;
-		mesh.position.z = Math.random() * 250 - 150;
-		
-		mesh.rotation.x = Math.random() * 2 * Math.PI;
-		mesh.rotation.y = Math.random() * 2 * Math.PI;
-		mesh.matrixAutoUpdate = false;
-		mesh.updateMatrix();
-		group.add( mesh );
-	}
-	scene.add( group );
-}
-
-
-function update()
-{
-	// find intersections
-	// create a Ray with origin at the mouse position
-	//   and direction into the scene (camera direction)
-	var vector = new THREE.Vector3( mouse.x, mouse.y, 1 );
-	console.log("mouse: "); console.log(mouse);
-	console.log("camera: "); console.log(camera);
-	projector.unprojectVector( vector, camera );
-	// var ray = new THREE.Raycaster( camera.position, vector.sub( camera.position ).normalize() );
-
-	// // create an array containing all objects in the scene with which the ray intersects
-	// var intersects = ray.intersectObjects( scene.children );
-
-	// // INTERSECTED = the object in the scene currently closest to the camera 
-	// //		and intersected by the Ray projected from the mouse position 	
-	
-	// // if there is one (or more) intersections
-	// if ( intersects.length > 0 )
-	// {
-	// 	// if the closest object intersected is not the currently stored intersection object
-	// 	if ( intersects[ 0 ].object != INTERSECTED ) 
-	// 	{
-	// 	    // restore previous intersection object (if it exists) to its original color
-	// 		if ( INTERSECTED ) 
-	// 			INTERSECTED.material.color.setHex( INTERSECTED.currentHex );
-	// 		// store reference to closest object as current intersection object
-	// 		INTERSECTED = intersects[ 0 ].object;
-	// 		// store color of closest object (for later restoration)
-	// 		INTERSECTED.currentHex = INTERSECTED.material.color.getHex();
-	// 		// set a new color for closest object
-	// 		INTERSECTED.material.color.setHex( 0xffff00 );
-	// 	}
-	// } 
-	// else // there are no intersections
-	// {
-	// 	// restore previous intersection object (if it exists) to its original color
-	// 	if ( INTERSECTED ) 
-	// 		INTERSECTED.material.color.setHex( INTERSECTED.currentHex );
-	// 	// remove previous intersection object reference
-	// 	//     by setting current intersection object to "nothing"
-	// 	INTERSECTED = null;
-	// }
-
-
-	// if ( keyboard.pressed("z") ) 
-	// { 
-	// 	// do something
-	// }
-	
-	// console.log("update");
-
-	// controls.update();
-	// stats.update();
-}
-
 
 function drawGrid(scene){
-	// Grid
+	// Grid -- Calculation is wrong
 	var size = 500, step = 10;
 	//var size = data.stations.station.length, step = 50;
 	var geometryBox = new THREE.Geometry();
@@ -277,15 +201,12 @@ function drawGrid(scene){
 	    geometryBox.vertices.push( new THREE.Vector3(  size, 0, i ) );
 	    geometryBox.vertices.push( new THREE.Vector3( i, 0, - size ) );
 	    geometryBox.vertices.push( new THREE.Vector3( i, 0,   size ) );
-
 	}
 	var material = new THREE.LineBasicMaterial( { color: 0x000000, opacity: .7 } );
 	var line = new THREE.Line( geometryBox, material );
 	line.type = THREE.LinePieces;
 	scene.add( line );	
 }
-
-
 
 function drawPlane(scene){
 	var planeGeometry = new THREE.PlaneGeometry( 2000, 2000 );
@@ -308,14 +229,11 @@ function drawPlane(scene){
 
 
 function drawGroundThree(scene, dataLand, dataCatastrophy){
-
 	// Create a plane for each land
 	for (var i =0; i < dataLand.states.length; i++) {
-
 		var curState = dataLand.states[i];
 	    // create the ground plane
 	    var planeGeometry = new THREE.PlaneGeometry(10,10,1,1);
-
 	    var maxRisk = "none";
 	    var valueRisk = -1;
 	    if (curState.riskAlpha > curState.riskBeta){
@@ -325,8 +243,7 @@ function drawGroundThree(scene, dataLand, dataCatastrophy){
 			if (curState.riskBeta > curState.riskGamma){ maxRisk = "beta"; valueRisk = curState.riskBeta; }
 	    	else { maxRisk = "gamma"; valueRisk = curState.riskGamma;  }	    	
 	    }
-
-	    // Types of maximum risk = unique hue
+	    // Types of maximum risk = unique hue (from red to green, we will keep blue for sea I guess)
 	    var colorRisk = new THREE.Color("hsl(0,50%,50%)");
 	    // Level of risk = higher saturation
 	    switch(maxRisk){
@@ -385,7 +302,6 @@ function drawTestLinesThree(scene){
 	geometryBoxPolygon.faces.push(new THREE.Face3(1,2,3));
 	// material
 	var material = new THREE.LineBasicMaterial( { color: 0xff0000, linewidth: 400 } );
-
 	// line
 	var line = new THREE.Line( geometryBoxPolygon, material );
 	scene.add( line );
@@ -426,10 +342,6 @@ function render() {
 	// camera.position.x += ( mouseX - camera.position.x ) * .05;
 	// camera.position.y += ( - mouseY - camera.position.y ) * .05;
 	// camera.lookAt( scene.position );
-
-	// TODO Debug this
-	// update();
-
 
 	// Render code from the webgl_geometry_splines
 	splines.uniform.mesh.visible = params.uniform;
