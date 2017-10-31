@@ -18,6 +18,7 @@ var wireframe;
 var projector,  INTERSECTED; // mouse = { x: 0, y: 0 },
 
 var paramsCatastrophy, catastrophyType = "hurricane";
+var maximumRiskGlobal;
 
 var windowHalfX = window.innerWidth / 2;
 var windowHalfY = window.innerHeight / 2;
@@ -114,13 +115,12 @@ function init() {
 
 
 	// My stuff
-	paramsCatastrophy = { "catastrophyParamA":40, "catastrophyParamB":21, "catastrophyParamC": 11 }
+	paramsCatastrophy = { "catastrophyParamA":0.26, "catastrophyParamB":0.21, "catastrophyParamC": 0.11 }
 	drawCylinder();
 	calculatePosColor();
 	console.log("Post calculatePosColor: "); console.log(dataLand);		
 	drawGroundThree();
 	drawPlane();
-	
 	// --
 
 	// Rendered
@@ -146,18 +146,10 @@ function init() {
 	transformControl.addEventListener( 'change', render );
 	scene.add( transformControl );
 	// Hiding transform situation is a little in a mess :()
-	transformControl.addEventListener( 'change', function( e ) {
-		cancelHideTransorm();
-	} );
-	transformControl.addEventListener( 'mouseDown', function( e ) {
-		cancelHideTransorm();
-	} );
-	transformControl.addEventListener( 'mouseUp', function( e ) {
-		delayHideTransform();
-	} );
-	transformControl.addEventListener( 'objectChange', function( e ) {
-		updateSplineOutline();
-	} );
+	transformControl.addEventListener( 'change', function( e ) { cancelHideTransorm(); } );
+	transformControl.addEventListener( 'mouseDown', function( e ) { cancelHideTransorm(); } );
+	transformControl.addEventListener( 'mouseUp', function( e ) { delayHideTransform(); } );
+	transformControl.addEventListener( 'objectChange', function( e ) { updateSplineOutline(); } );
 	// --
 
 	// ---- light
@@ -201,7 +193,7 @@ function init() {
 		// Movement done, let's recalculate the colors
 		calculatePosColor();
 		console.log("dataLand: ");console.log(dataLand);
-
+		colorGroundThree();
 	} );
 
 
@@ -255,59 +247,71 @@ function drawPlane(){
 
 function drawGroundThree(){
 	// Create a ground for each land
-
 	console.log("dataLand: "); console.log(dataLand);
-
 	for (var i =0; i < dataLand.states.length; i++) {
 		var curState = dataLand.states[i];
 	    // create the ground plane
 	    var planeGeometry = new THREE.PlaneGeometry(10,10,1,1);
-	    var maxRisk = "none";
-	    var valueRisk = -1;
-	    if (curState.riskAlpha > curState.riskBeta){
-	    	if (curState.riskAlpha > curState.riskGamma){ maxRisk = "alpha"; valueRisk = curState.riskAlpha; } 
-	    	else { maxRisk = "gamma"; valueRisk = curState.riskGamma;  }
-	    } else {
-			if (curState.riskBeta > curState.riskGamma){ maxRisk = "beta"; valueRisk = curState.riskBeta; }
-	    	else { maxRisk = "gamma"; valueRisk = curState.riskGamma;  }	    	
-	    }
-	    // Types of maximum risk = unique hue (from red to green, we will keep blue for sea I guess)
-	    var colorRisk = new THREE.Color("hsl(0,50%,50%)");
-	    // Level of risk = higher saturation
-	    
-    	console.log("valueRisk: "+valueRisk);
-
-	    switch(maxRisk){
-	    	case "alpha":
-	    		colorRisk = new THREE.Color("hsl(0.1,"+ Math.round(valueRisk*100) +"% ,50%)");
-    		break;	
-    		case "beta":
-				colorRisk = new THREE.Color("hsl(50,"+ Math.round(valueRisk*100) +"%,50%)");
-    		break;
-    		case "gamma":
-				colorRisk = new THREE.Color("hsl(100,"+ Math.round(valueRisk*100) +"%,50%)");
-    		break;
-	    }
-
-	    var planeMaterial = new THREE.MeshLambertMaterial({color: colorRisk});
-	    var plane = new THREE.Mesh(planeGeometry,planeMaterial);
-	    // plane.receiveShadow  = true;
-	
+	    var planeMaterial = new THREE.MeshLambertMaterial({color: new THREE.Color("hsl(0, 0%,50%)")});
+	    var plane = new THREE.Mesh(planeGeometry,planeMaterial);	
 	    // rotate and position the plane
 	    plane.rotation.x= -0.5*Math.PI;
-	    plane.position.x= curState.x;
-	    plane.position.y= curState.y;
-	    plane.position.z= curState.z;
-	    // add the plane to the scene
-	    scene.add(plane);
+	    plane.position.x= curState.x; plane.position.y= curState.y; plane.position.z= curState.z;
+		// connect the global data with the plane geometry
+		dataLand.states[i].plane = plane;
+		// add the plane to the scene
+		scene.add(plane);
 	}
+	colorGroundThree();
+}
 
+function colorGroundThree(){
+	for (var i =0; i < dataLand.states.length; i++) {
+		var curState = dataLand.states[i];
+	    var typeMaxRisk = "none";
+	    var valueMaxRisk = -1;
+	    if (curState.riskAlpha > curState.riskBeta){
+	    	if (curState.riskAlpha > curState.riskGamma){ 
+	    		typeMaxRisk = "alpha"; valueMaxRisk = curState.riskAlpha; 
+	    	}  else { 
+	    		typeMaxRisk = "gamma"; valueMaxRisk = curState.riskGamma;  
+	    	}
+	    } else {
+			if (curState.riskBeta > curState.riskGamma){ 
+				typeMaxRisk = "beta"; valueMaxRisk = curState.riskBeta; 
+			} else { 
+				typeMaxRisk = "gamma"; valueMaxRisk = curState.riskGamma;  
+			}
+		}
+
+		// Types of maximum risk = unique hue (from red to green, we will keep blue for sea I guess)
+		var colorRisk = new THREE.Color("hsl(0,0%,80%)");
+		// Level of risk = higher saturation
+		console.log("valueMaxRisk: "+valueMaxRisk);
+
+		var saturationTab = 100 * valueMaxRisk / (curState.distanceToCatastrophy*10);
+		console.log("saturationTab: "+saturationTab);
+
+	    switch(typeMaxRisk){
+	    	case "alpha":
+	    		colorRisk = new THREE.Color("hsl(0.1,"+ (1 + Math.round(saturationTab*90) ) +"% ,60%)");
+    		break;
+    		case "beta":
+				colorRisk = new THREE.Color("hsl(50,"+ (1 + Math.round(saturationTab*90) ) +"%,60%)");
+    		break;
+    		case "gamma":
+				colorRisk = new THREE.Color("hsl(100,"+ (1 + Math.round(saturationTab*90) ) +"%,60%)");
+    		break;
+	    }
+	    var planeMaterial = new THREE.MeshLambertMaterial({color: colorRisk});	    
+	    curState.plane.material = planeMaterial;
+	}
 }
 
 function drawCylinder(){
-    cylinderGeometry	= new THREE.CylinderGeometry(20, 1, 50, 64,1);
-    cylinderMaterial	= new THREE.MeshLambertMaterial({ color: 0x0000CC, opacity: 0.4, transparent: true});
-    cylinder	= new THREE.Mesh( cylinderGeometry, cylinderMaterial );
+    cylinderGeometry = new THREE.CylinderGeometry(20, 1, 50, 64,1);
+    cylinderMaterial = new THREE.MeshLambertMaterial({ color: 0x0000CC, opacity: 0.4, transparent: true});
+    cylinder = new THREE.Mesh( cylinderGeometry, cylinderMaterial );
     cylinder.castShadow = true;
     cylinder.receiveShadow = false;
     cylinder.position.x = 40;
@@ -327,53 +331,56 @@ function drawCylinder(){
 	scene.add( wireframe );	
 
 	cylinder.children = wireframe;
-
     console.log("cylinder: "); console.log(cylinder);
     scene.add(cylinder);
 }
 
+
 function calculatePosColor(){
 
 	// TODO change the parameters for the distance changes to have a bigger impact
-
-	var maximumRiskGlobal = 0.0;
+	maximumRiskGlobal = 0.0;
 	// This is made up, but probably the part that has crazy potential (potential use for machine learning and interaction here !)
 	for(var i =0; i < dataLand.states.length;i++){		
 		// Proper math would be calculation based on parameters from the hazard moving
 		var distXSquare = ((cylinder.position.x - dataLand.states[i].x) * (cylinder.position.x - dataLand.states[i].x) );
 		var distZSquare = ((cylinder.position.z - dataLand.states[i].z) * (cylinder.position.z - dataLand.states[i].z) );
-		var distLandCylinder = Math.sqrt( distXSquare 
-			// +  (cylinder.position.y-dataLand.states[i].y)^2 
-			+ distZSquare );
-		console.log("distLandCylinder: "+distLandCylinder+", i: "+i);
+		var distLandCylinder = Math.sqrt( distXSquare + distZSquare );
 
 		// Added for results to be usable
-		var localCalculRiskAlpha = dataLand.states[i].paramA * cylinder.paramsCatastrophy.catastrophyParamA
-		*distLandCylinder;
-		var localCalculRiskBeta = dataLand.states[i].paramB * cylinder.paramsCatastrophy.catastrophyParamB
-		*distLandCylinder;
-		var localCalculRiskGamma = dataLand.states[i].paramC * cylinder.paramsCatastrophy.catastrophyParamC
-		*distLandCylinder;
+		var localCalculRiskAlpha = (dataLand.states[i].paramA 
+			* cylinder.paramsCatastrophy.catastrophyParamA) ;
+		var localCalculRiskBeta = (dataLand.states[i].paramB 
+			* cylinder.paramsCatastrophy.catastrophyParamB) ;
+		var localCalculRiskGamma = (dataLand.states[i].paramC 
+			* cylinder.paramsCatastrophy.catastrophyParamC) ;
 
-		if (localCalculRiskGamma == 0.0){ maximumRiskGlobal = localCalculRiskGamma; }
+		if (maximumRiskGlobal == 0.0){ maximumRiskGlobal = localCalculRiskGamma; }
 		var maxLandRisks = Math.max(localCalculRiskAlpha,localCalculRiskBeta, localCalculRiskGamma);
+
 		if ( maximumRiskGlobal < maxLandRisks ){ maximumRiskGlobal = maxLandRisks; }
 
+		// console.log("maxLandRisks: "+maxLandRisks+", maximumRiskGlobal: "+maximumRiskGlobal);
 		// What are the cases based on the calculus?
-		if (typeof dataLand.states[i].riskAlpha == "undefined"){ dataLand.states[i].riskAlpha = 0; } 
-		if (typeof dataLand.states[i].riskBeta == "undefined"){ dataLand.states[i].riskBeta = 0; }
-		if (typeof dataLand.states[i].riskGamma == "undefined"){ dataLand.states[i].riskGamma = 0; }
+		if (typeof dataLand.states[i].riskAlpha == "undefined")
+			{ dataLand.states[i].riskAlpha = 0; }
+		if (typeof dataLand.states[i].riskBeta == "undefined")
+			{ dataLand.states[i].riskBeta = 0; }
+		if (typeof dataLand.states[i].riskGamma == "undefined")
+			{ dataLand.states[i].riskGamma = 0; }
 		dataLand.states[i].riskAlpha = localCalculRiskAlpha;
 		dataLand.states[i].riskBeta = localCalculRiskBeta; 
-		dataLand.states[i].riskGamma = localCalculRiskGamma; 
+		dataLand.states[i].riskGamma = localCalculRiskGamma;
+		dataLand.states[i].distanceToCatastrophy = distLandCylinder;
 	}
 
-	for(var i =0; i < dataLand.states.length;i++){		
-		dataLand.states[i].riskAlpha = dataLand.states[i].riskAlpha/maximumRiskGlobal;
-		dataLand.states[i].riskBeta = dataLand.states[i].riskBeta/maximumRiskGlobal;
-		dataLand.states[i].riskGamma = dataLand.states[i].riskGamma/maximumRiskGlobal;
-	}
+	for(var i =0; i < dataLand.states.length;i++){
+		dataLand.states[i].riskAlpha = dataLand.states[i].riskAlpha; // /maximumRiskGlobal;
+		dataLand.states[i].riskBeta = dataLand.states[i].riskBeta; // /maximumRiskGlobal;
+		dataLand.states[i].riskGamma = dataLand.states[i].riskGamma; // /maximumRiskGlobal;
+		console.log("riskAlpha: "+dataLand.states[i].riskAlpha+", riskBeta: "+dataLand.states[i].riskBeta+", localCalculRiskGamma: "+dataLand.states[i].riskGamma+", dataLand.states[i].distanceToCatastrophy: "+dataLand.states[i].distanceToCatastrophy);
 
+	}
 }
 
 
@@ -418,7 +425,6 @@ function render() {
 	wireframe.position.x = cylinder.position.x;
 	wireframe.position.y = cylinder.position.y;
 	wireframe.position.z = cylinder.position.z;
-
 
 	renderer.render( scene, camera );
 }
