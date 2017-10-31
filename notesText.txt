@@ -77,3 +77,165 @@ function drawTestLinesThree(scene){
 	scene.add( line );
 	console.log("line: "); console.log(line);
 }
+
+
+
+// Spline and boxes
+
+
+function addPoint() {
+	splinePointsLength ++;
+	positions.push( addSplineObject().position );
+	updateSplineOutline();
+}
+
+function removePoint() {
+	if ( splinePointsLength <= 4 ) {
+		return;
+	}
+	splinePointsLength --;
+	positions.pop();
+	scene.remove( splineHelperObjects.pop() );
+	updateSplineOutline();
+}
+
+function updateSplineOutline() {
+	for ( var k in splines ) {
+		var spline = splines[ k ];
+		splineMesh = spline.mesh;
+		for ( var i = 0; i < ARC_SEGMENTS; i ++ ) {
+			var p = splineMesh.geometry.vertices[ i ];
+			p.copy( spline.getPoint( i /  ( ARC_SEGMENTS - 1 ) ) );
+		}
+		splineMesh.geometry.verticesNeedUpdate = true;
+	}
+}
+
+function exportSpline() {
+	var strplace = [];
+	for ( var i = 0; i < splinePointsLength; i ++ ) {
+		var p = splineHelperObjects[ i ].position;
+		strplace.push( 'new THREE.Vector3({0}, {1}, {2})'.format( p.x, p.y, p.z ) )
+	}
+	console.log( strplace.join( ',\n' ) );
+	var code = '[' + ( strplace.join( ',\n\t' ) ) + ']';
+	prompt( 'copy and paste code', code );
+}
+
+function addSplineObject( position ) {
+	var material = new THREE.MeshLambertMaterial( { color: Math.random() * 0xffffff } );
+	var object = new THREE.Mesh( geometry, material );
+	if ( position ) {
+		object.position.copy( position );
+	} else {
+		object.position.x = Math.random() * 1000 - 500;
+		object.position.y = Math.random() * 600;
+		object.position.z = Math.random() * 800 - 400;
+	}
+
+	object.castShadow = true;
+	object.receiveShadow = true;
+	scene.add( object );
+	splineHelperObjects.push( object );
+	return object;
+}
+
+function addPoint() {
+	splinePointsLength ++;
+	positions.push( addSplineObject().position );
+	updateSplineOutline();
+}
+
+function removePoint() {
+	if ( splinePointsLength <= 4 ) { return; }
+	splinePointsLength --;
+	positions.pop();
+	scene.remove( splineHelperObjects.pop() );
+	updateSplineOutline();
+}
+
+function load( new_positions ) {
+	while ( new_positions.length > positions.length ) { addPoint(); }
+	while ( new_positions.length < positions.length ) { removePoint(); }
+	for ( var i = 0; i < positions.length; i ++ ) {
+		positions[ i ].copy( new_positions[ i ] );
+	}
+	updateSplineOutline();
+}
+
+function cancelHideTransorm() {
+	if ( hiding ) clearTimeout( hiding );
+}
+
+function delayHideTransform() {
+	cancelHideTransorm();
+	hideTransform();
+}
+
+function hideTransform() {
+	hiding = setTimeout( function() {
+		transformControl.detach( transformControl.object );
+	}, 2500 )
+}
+
+
+// Inside init
+// Gui
+	var gui = new dat.GUI();
+	gui.add( params, 'uniform' );
+	gui.add( params, 'tension', 0, 1 ).step( 0.01 ).onChange( function( value ) {
+		splines.uniform.tension = value; updateSplineOutline();
+	});
+	gui.add( params, 'centripetal' ); gui.add( params, 'chordal' );
+	gui.add( params, 'addPoint' ); gui.add( params, 'removePoint' );
+	gui.add( params, 'exportSpline' );
+	gui.open();
+
+	/*******
+	 * Curves and boxes
+	 *********/
+	for ( var i = 0; i < splinePointsLength; i ++ ) { addSplineObject( positions[ i ] ); }
+	positions = [];
+
+	for ( var i = 0; i < splinePointsLength; i ++ ) { positions.push( splineHelperObjects[ i ].position ); }
+	var geometry = new THREE.Geometry();
+	for ( var i = 0; i < ARC_SEGMENTS; i ++ ) { geometry.vertices.push( new THREE.Vector3() ); }
+
+	var curve = new THREE.CatmullRomCurve3( positions );
+	curve.type = 'catmullrom';
+	curve.mesh = new THREE.Line( geometry.clone(), new THREE.LineBasicMaterial( {
+		color: 0xff0000, opacity: 0.35, linewidth: 2
+		} ) );
+	curve.mesh.castShadow = true; splines.uniform = curve;
+
+	curve = new THREE.CatmullRomCurve3( positions );
+	curve.type = 'centripetal';
+	curve.mesh = new THREE.Line( geometry.clone(), new THREE.LineBasicMaterial( {
+		color: 0x00ff00, opacity: 0.35, linewidth: 2
+		} ) );
+	curve.mesh.castShadow = true;
+	splines.centripetal = curve;
+
+	curve = new THREE.CatmullRomCurve3( positions );
+	curve.type = 'chordal';
+	curve.mesh = new THREE.Line( geometry.clone(), new THREE.LineBasicMaterial( {
+		color: 0x0000ff, opacity: 0.35, linewidth: 2
+		} ) );
+	curve.mesh.castShadow = true;
+	splines.chordal = curve;
+
+	for ( var k in splines ) {
+		var spline = splines[ k ]; scene.add( spline.mesh );
+	}
+
+	load( [ new THREE.Vector3( 0, 500, 0 ),
+			new THREE.Vector3( -53.56300074753207, 171.49711742836848, -14.495472686253045 ),
+			new THREE.Vector3( -91.40118730204415, 176.4306956436485, -6.958271935582161 ),
+			new THREE.Vector3( -383.785318791128, 491.1365363371675, 47.869296953772746 ) ] );
+	// -- 
+
+// Inside render
+	// Render code from the webgl_geometry_splines
+	splines.uniform.mesh.visible = params.uniform;
+	splines.centripetal.mesh.visible = params.centripetal;
+	splines.chordal.mesh.visible = params.chordal;

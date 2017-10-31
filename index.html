@@ -40,22 +40,24 @@
 	</head>
 	<body>
         <div id="InfoInteractions"> Each colored square represents a region. The more satured, the higher the risk. Color indicates what kind of risk. <br/>
-
+        <!-- This is the time 
         <input type="range" min="0" max="2000" value="0" onchange="globalIndexValue = this.value;console.log(globalIndexValue);"/> <br/>
-        This is the time <div id="timeSeen"> </div>
+        <div id="timeSeen"> </div> -->
 		<!--         <hr/>
         <div id="InfoHovering"> Hover over stations to get more information </div> -->
         <br/>
-        <div id="LastHoveredStationInfo">  </div><hr/>
+        <div id="LastHoveredStationInfo">  </div>
+        <!-- <hr/>
         <button onclick="myFunction1()">Action 1</button>
         <button onclick="myFunction2()">Action 2</button>
         <button onclick="myFunction3()">Action 3</button>
-        <button onclick="myFunction4()">Action 4</button>
+        <button onclick="myFunction4()">Action 4</button> -->
         </div>
 
 		<script src="three.min.js"></script>
 		<script src="d3.min.js"></script>
 		<script src="stats.min.js"></script>
+        <script src="js/geometries/hilbert3D.js"></script>
 
         <script src="js/controls/TrackballControls.js"></script>
         <script src="js/controls/DragControls.js"></script>
