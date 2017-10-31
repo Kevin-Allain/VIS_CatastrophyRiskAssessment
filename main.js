@@ -14,6 +14,9 @@ var mouse = new THREE.Vector2();
 
 var cylinderGeometry;
 var cylinderArray;
+var line;
+var linesRisk;
+
 var wireframe;
 var projector,  INTERSECTED; // mouse = { x: 0, y: 0 },
 
@@ -63,10 +66,9 @@ function init() {
 	paramsCatastrophy = { "catastrophyParamA":0.26, "catastrophyParamB":0.21, "catastrophyParamC": 0.11 }
 	drawCylinder();
 	calculatePosColor();
-	console.log("Post calculatePosColor: "); console.log(dataLand);		
 	drawGroundThree();
 	drawPlane();
-	drawLine3D();
+	drawLinesRisk();
 	// --
 
 	// Rendered
@@ -85,7 +87,6 @@ function init() {
 	controlsCylinder.noPan = false;
 	controlsCylinder.staticMoving = true;
 	controlsCylinder.dynamicDampingFactor = 0.3;
-
 	// transformControl
 	transformControl = new THREE.TransformControls( camera, renderer.domElement );
 	transformControl.addEventListener( 'change', render );
@@ -138,6 +139,8 @@ function init() {
 		calculatePosColor();
 		console.log("dataLand: ");console.log(dataLand);
 		colorGroundThree();
+		// Update the length of the lines
+		updateLinesRisk();
 	} );
 
 	console.log("wireframe");console.log(wireframe);
@@ -202,15 +205,26 @@ function drawGroundThree(){
 	colorGroundThree();
 }
 
-function drawLine3D(){
+function drawLinesRisk(){
 
-	var geometry3 = new THREE.Geometry(),
-		points =  [new THREE.Vector3( 0 , 100, 0 ),
-			new THREE.Vector3( 40 , 100, 0 ),
-			new THREE.Vector3( 80 , 100, 0),
-			new THREE.Vector3( 120 , 100, 0)
-			],
-		colors3 = [];
+	// Let's draw 12 lines around the cylinder
+	linesRisk = [];
+	pointsRisks = [];
+
+	for (var i = 0; i< 12; i++){
+		var angleRotation = 2*Math.PI -  i*(2*Math.PI/12);
+		var posXZ = polar2cartesian( Math.random() * 100, angleRotation );
+		// console.log("posXZ: ");console.log(posXZ);
+		pointsRisks.push(posXZ);
+	}
+
+	var geometry3 = new THREE.Geometry();
+	var points = [];
+	for (var i =0; i < pointsRisks.length;i++){
+		points.push(new THREE.Vector3( pointsRisks[i].x , 100, pointsRisks[i].y ))
+		points.push(new THREE.Vector3( 0 , 100, 0 ))
+	}
+	var colors3 = [];
 
 	for ( i = 0; i < points.length; i ++ ) {
 		geometry3.vertices.push( points[ i ] );
@@ -220,20 +234,63 @@ function drawLine3D(){
 
 	geometry3.colors = colors3;
 	// lines
-	material = new THREE.LineBasicMaterial( { color: 0xffffff, opacity: 1, linewidth: 3, vertexColors: THREE.VertexColors } );
-	var line, p, scale = 0.3, d = 225;
+	material = new THREE.LineBasicMaterial( { color: 0xffffff, opacity: 1, linewidth: 20, vertexColors: THREE.VertexColors } );
+	var p, scale = 0.3, d = 225;
 	line = new THREE.Line(geometry3, material );
 	line.scale.x = line.scale.y = line.scale.z =  scale*1.5;
 	line.position.x = cylinder.position.x;
 	line.position.y = 0;
 	line.position.z = cylinder.position.z;
-	console.log("geometry3: ");console.log(geometry3);
-	console.log("line: ");console.log(line);
+
+	scene.add( line );
+}
+
+function updateLinesRisk(){
+	// NEW IDEA: WE REMOVE PREVIOUS LINES AND CREATE NEW ONES
+	for(var i = 0; i < scene.children.length; i++){
+		if (scene.children[i].type == "Line"){
+	    	scene.remove(scene.children[i]);
+		}
+	}	
+
+	linesRisk = [];
+	pointsRisks = [];
+	for (var i = 0; i< 12; i++){
+		var angleRotation = 2*Math.PI -  i*(2*Math.PI/12);
+		var posXZ = polar2cartesian( Math.random() * 100, angleRotation );
+		// console.log("posXZ: ");console.log(posXZ);
+		pointsRisks.push(posXZ);
+	}
+
+	var geometry3 = new THREE.Geometry();
+	var points = [];
+	for (var i =0; i < pointsRisks.length;i++){
+		points.push(new THREE.Vector3( pointsRisks[i].x , 100, pointsRisks[i].y ))
+		points.push(new THREE.Vector3( 0 , 100, 0 ))
+	}
+	var colors3 = [];
+
+	for ( i = 0; i < points.length; i ++ ) {
+		geometry3.vertices.push( points[ i ] );
+		colors3[ i ] = new THREE.Color( 0xffffff );
+		colors3[ i ].setHSL( 0, 1.0, 0.5 );
+	}
+	geometry3.colors = colors3;
+	// lines
+	material = new THREE.LineBasicMaterial( { color: 0xffffff, opacity: 1, linewidth: 20, vertexColors: THREE.VertexColors } );
+	var p, scale = 0.3, d = 225;
+	line = new THREE.Line(geometry3, material );
+	line.scale.x = line.scale.y = line.scale.z =  scale*1.5;
+	line.position.x = cylinder.position.x;
+	line.position.y = 0;
+	line.position.z = cylinder.position.z;
+
 	scene.add( line );
 
 }
 
-function colorGroundThree(){
+
+function colorGroundThree() {
 	for (var i =0; i < dataLand.states.length; i++) {
 		var curState = dataLand.states[i];
 	    var typeMaxRisk = "none";
@@ -282,7 +339,6 @@ function drawCylinder(){
     cylinder.position.x = 40;
     cylinder.position.z = 60;
     cylinder.position.y = 20;
-
     // Global parameters, we want them to be changeable
     cylinder.catastrophyType = catastrophyType;
     cylinder.paramsCatastrophy = paramsCatastrophy;
@@ -294,7 +350,6 @@ function drawCylinder(){
     wireframe.position.z = 60;
     wireframe.position.y = 20;
 	scene.add( wireframe );
-
 	cylinder.children = wireframe;
     console.log("cylinder: "); console.log(cylinder);
     scene.add(cylinder);
@@ -302,7 +357,6 @@ function drawCylinder(){
 
 
 function calculatePosColor(){
-
 	// TODO change the parameters for the distance changes to have a bigger impact
 	maximumRiskGlobal = 0.0;
 	// This is made up, but probably the part that has crazy potential (potential use for machine learning and interaction here !)
@@ -343,19 +397,12 @@ function calculatePosColor(){
 		dataLand.states[i].riskAlpha = dataLand.states[i].riskAlpha; // /maximumRiskGlobal;
 		dataLand.states[i].riskBeta = dataLand.states[i].riskBeta; // /maximumRiskGlobal;
 		dataLand.states[i].riskGamma = dataLand.states[i].riskGamma; // /maximumRiskGlobal;
-		console.log("riskAlpha: "+dataLand.states[i].riskAlpha+", riskBeta: "+dataLand.states[i].riskBeta+", localCalculRiskGamma: "+dataLand.states[i].riskGamma+", dataLand.states[i].distanceToCatastrophy: "+dataLand.states[i].distanceToCatastrophy);
-
+		// console.log("riskAlpha: "+dataLand.states[i].riskAlpha+", riskBeta: "+dataLand.states[i].riskBeta+", localCalculRiskGamma: "+dataLand.states[i].riskGamma+", dataLand.states[i].distanceToCatastrophy: "+dataLand.states[i].distanceToCatastrophy);
 	}
 }
 
-
-
 function render() {
 	var time = Date.now() * 0.001;
-	var rx = Math.sin( time * 0.7 ) * 0.5,
-		ry = Math.sin( time * 0.3 ) * 0.5,
-		rz = Math.sin( time * 0.2 ) * 0.5;
-
 	// RAY CASTER
 	// update the picking ray with the camera and mouse position
 	raycaster.setFromCamera( mouse, camera );
@@ -385,7 +432,8 @@ function render() {
 	wireframe.position.x = cylinder.position.x;
 	wireframe.position.y = cylinder.position.y;
 	wireframe.position.z = cylinder.position.z;
-
+	line.position.x = cylinder.position.x;
+	line.position.z = cylinder.position.z;
 
 
 	renderer.render( scene, camera );
@@ -399,4 +447,12 @@ function onMouseMove( event ) {
 	// (-1 to +1) for both components
 	mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
 	mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+}
+
+
+function polar2cartesian(rho,theta) {
+	var rez = {};
+	rez.x = rho * Math.cos(theta);
+	rez.y = rho * Math.sin(theta);
+	return rez;
 }
