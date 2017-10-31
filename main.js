@@ -6,6 +6,9 @@ var geometryBox, group;
 var mouseX = 0, mouseY = 0;
 
 
+
+var dataLand;
+
 var raycaster = new THREE.Raycaster();
 var mouse = new THREE.Vector2();
 
@@ -13,6 +16,8 @@ var cylinderGeometry;
 var cylinderArray;
 var wireframe;
 var projector,  INTERSECTED; // mouse = { x: 0, y: 0 },
+
+var paramsCatastrophy, catastrophyType = "hurricane";
 
 var windowHalfX = window.innerWidth / 2;
 var windowHalfY = window.innerHeight / 2;
@@ -28,16 +33,17 @@ var params = { uniform: true, tension: 0.5, centripetal: true, chordal: true, ad
 var hiding;
 
 // Action code
-d3.json("land-grid.json", function(error, dataLand) {
-	console.log("dataLand: "); console.log(dataLand);
+d3.json("land-grid.json", function(error, loadedData) {
+	console.log("loadedData: "); console.log(loadedData);
+	dataLand = loadedData;
 
-	init(dataLand);
+	init();
 	animate();
 
 })
 // ----
 
-function init(dataLand) {
+function init() {
 	container = document.createElement( 'div' );
 	document.body.appendChild( container );
 
@@ -108,12 +114,13 @@ function init(dataLand) {
 
 
 	// My stuff
-	calculatePosColor(dataLand);
+	paramsCatastrophy = { "catastrophyParamA":40, "catastrophyParamB":21, "catastrophyParamC": 11 }
+	drawCylinder();
+	calculatePosColor();
 	console.log("Post calculatePosColor: "); console.log(dataLand);		
-	drawGroundThree(scene, dataLand);
-	drawPlane(scene);
-	var paramsCatastrophy = { "catastrophyParamA":40, "catastrophyParamB":21, "catastrophyParamC": 11 }
-	drawCylinder(scene);
+	drawGroundThree();
+	drawPlane();
+	
 	// --
 
 	// Rendered
@@ -190,6 +197,11 @@ function init(dataLand) {
 	dragControlsCylinder.addEventListener( 'dragend', function ( event ) { 
 		controlsCylinder.enabled = true; 
 		controls.enabled=true;
+
+		// Movement done, let's recalculate the colors
+		calculatePosColor();
+		console.log("dataLand: ");console.log(dataLand);
+
 	} );
 
 
@@ -220,8 +232,7 @@ function animate() {
 }
 
 
-
-function drawPlane(scene){
+function drawPlane(){
 	var planeGeometry = new THREE.PlaneGeometry( 2000, 2000 );
 	planeGeometry.rotateX( - Math.PI / 2 );
 	var planeMaterial = new THREE.ShadowMaterial( { opacity: 0.2 } );
@@ -242,8 +253,11 @@ function drawPlane(scene){
 }
 
 
-function drawGroundThree(scene, dataLand, dataCatastrophy){
+function drawGroundThree(){
 	// Create a ground for each land
+
+	console.log("dataLand: "); console.log(dataLand);
+
 	for (var i =0; i < dataLand.states.length; i++) {
 		var curState = dataLand.states[i];
 	    // create the ground plane
@@ -260,17 +274,21 @@ function drawGroundThree(scene, dataLand, dataCatastrophy){
 	    // Types of maximum risk = unique hue (from red to green, we will keep blue for sea I guess)
 	    var colorRisk = new THREE.Color("hsl(0,50%,50%)");
 	    // Level of risk = higher saturation
+	    
+    	console.log("valueRisk: "+valueRisk);
+
 	    switch(maxRisk){
 	    	case "alpha":
-	    		colorRisk = new THREE.Color("hsl(0.1,"+ Math.round(valueRisk) +"% ,50%)");
+	    		colorRisk = new THREE.Color("hsl(0.1,"+ Math.round(valueRisk*100) +"% ,50%)");
     		break;	
     		case "beta":
-				colorRisk = new THREE.Color("hsl(50,"+ Math.round(valueRisk) +"%,50%)");
+				colorRisk = new THREE.Color("hsl(50,"+ Math.round(valueRisk*100) +"%,50%)");
     		break;
     		case "gamma":
-				colorRisk = new THREE.Color("hsl(100,"+ Math.round(valueRisk) +"%,50%)");
+				colorRisk = new THREE.Color("hsl(100,"+ Math.round(valueRisk*100) +"%,50%)");
     		break;
 	    }
+
 	    var planeMaterial = new THREE.MeshLambertMaterial({color: colorRisk});
 	    var plane = new THREE.Mesh(planeGeometry,planeMaterial);
 	    // plane.receiveShadow  = true;
@@ -286,7 +304,7 @@ function drawGroundThree(scene, dataLand, dataCatastrophy){
 
 }
 
-function drawCylinder(scene, catastrophyType, paramsCatastrophy){
+function drawCylinder(){
     cylinderGeometry	= new THREE.CylinderGeometry(20, 1, 50, 64,1);
     cylinderMaterial	= new THREE.MeshLambertMaterial({ color: 0x0000CC, opacity: 0.4, transparent: true});
     cylinder	= new THREE.Mesh( cylinderGeometry, cylinderMaterial );
@@ -295,6 +313,8 @@ function drawCylinder(scene, catastrophyType, paramsCatastrophy){
     cylinder.position.x = 40;
     cylinder.position.z = 60;
     cylinder.position.y = 20;
+
+    // Global parameters, we want them to be changeable
     cylinder.catastrophyType = catastrophyType;
     cylinder.paramsCatastrophy = paramsCatastrophy;
 
@@ -312,18 +332,33 @@ function drawCylinder(scene, catastrophyType, paramsCatastrophy){
     scene.add(cylinder);
 }
 
-function calculatePosColor(dataLand){
+function calculatePosColor(){
+
+	// TODO change the parameters for the distance changes to have a bigger impact
+
+	var maximumRiskGlobal = 0.0;
 	// This is made up, but probably the part that has crazy potential (potential use for machine learning and interaction here !)
 	for(var i =0; i < dataLand.states.length;i++){		
 		// Proper math would be calculation based on parameters from the hazard moving
+		var distXSquare = ((cylinder.position.x - dataLand.states[i].x) * (cylinder.position.x - dataLand.states[i].x) );
+		var distZSquare = ((cylinder.position.z - dataLand.states[i].z) * (cylinder.position.z - dataLand.states[i].z) );
+		var distLandCylinder = Math.sqrt( distXSquare 
+			// +  (cylinder.position.y-dataLand.states[i].y)^2 
+			+ distZSquare );
+		console.log("distLandCylinder: "+distLandCylinder+", i: "+i);
 
 		// Added for results to be usable
-		var randomVarA = Math.random(); var randomVarB = Math.random(); var randomVarC = Math.random();
-		var localCalculRiskAlpha = dataLand.states[i].paramA * randomVarA - dataLand.states[i].paramB * randomVarB + dataLand.states[i].paramC * randomVarC;
-		randomVarA = Math.random();	randomVarB = Math.random(); randomVarC = Math.random();
-		var localCalculRiskBeta = dataLand.states[i].paramA * randomVarA - dataLand.states[i].paramB * randomVarB + dataLand.states[i].paramC * randomVarC;
-		randomVarA = Math.random();	randomVarB = Math.random(); randomVarC = Math.random();
-		var localCalculRiskGamma = dataLand.states[i].paramA * randomVarA - dataLand.states[i].paramB * randomVarB+ dataLand.states[i].paramC * randomVarC;
+		var localCalculRiskAlpha = dataLand.states[i].paramA * cylinder.paramsCatastrophy.catastrophyParamA
+		*distLandCylinder;
+		var localCalculRiskBeta = dataLand.states[i].paramB * cylinder.paramsCatastrophy.catastrophyParamB
+		*distLandCylinder;
+		var localCalculRiskGamma = dataLand.states[i].paramC * cylinder.paramsCatastrophy.catastrophyParamC
+		*distLandCylinder;
+
+		if (localCalculRiskGamma == 0.0){ maximumRiskGlobal = localCalculRiskGamma; }
+		var maxLandRisks = Math.max(localCalculRiskAlpha,localCalculRiskBeta, localCalculRiskGamma);
+		if ( maximumRiskGlobal < maxLandRisks ){ maximumRiskGlobal = maxLandRisks; }
+
 		// What are the cases based on the calculus?
 		if (typeof dataLand.states[i].riskAlpha == "undefined"){ dataLand.states[i].riskAlpha = 0; } 
 		if (typeof dataLand.states[i].riskBeta == "undefined"){ dataLand.states[i].riskBeta = 0; }
@@ -332,7 +367,16 @@ function calculatePosColor(dataLand){
 		dataLand.states[i].riskBeta = localCalculRiskBeta; 
 		dataLand.states[i].riskGamma = localCalculRiskGamma; 
 	}
+
+	for(var i =0; i < dataLand.states.length;i++){		
+		dataLand.states[i].riskAlpha = dataLand.states[i].riskAlpha/maximumRiskGlobal;
+		dataLand.states[i].riskBeta = dataLand.states[i].riskBeta/maximumRiskGlobal;
+		dataLand.states[i].riskGamma = dataLand.states[i].riskGamma/maximumRiskGlobal;
+	}
+
 }
+
+
 
 function render() {
 	var time = Date.now() * 0.001;
